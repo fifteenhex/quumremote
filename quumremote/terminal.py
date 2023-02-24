@@ -11,6 +11,11 @@ class ShittyTerminal:
         self.scrollback = []
         self.linebuffer = ""
 
+    async def dump_scrollback(self):
+        for line in self.scrollback:
+            print(">>> %s" % line)
+        self.clear_scrollback()
+
     def clear_scrollback(self):
         self.scrollback = []
 
@@ -25,24 +30,18 @@ class ShittyTerminal:
                 self.linebuffer += char
 
     async def _poll(self):
-        try:
-            data = await asyncio.wait_for(self._reader.read(128), 1)
-            decoded_data = data.decode()
-            self._append_to_linebuff(decoded_data)
-            return True
-        except TimeoutError:
-            return False
-
-    async def drain(self):
         while True:
-            if not await self._poll():
+            try:
+                data = await asyncio.wait_for(self._reader.read(128), 1)
+                decoded_data = data.decode()
+                self._append_to_linebuff(decoded_data)
+            except TimeoutError:
                 break
 
-    async def hit_enter(self):
-        self._writer.write("\n".encode())
-        await self._writer.drain()
-
-    async def send_line(self, line):
+    async def send_line(self, line: str):
         terminated_line = line + "\n"
         self._writer.write(terminated_line.encode())
-        await self._writer.drain()
+        await asyncio.gather(self._writer.drain(), self._poll())
+
+    async def hit_enter(self):
+        await self.send_line("")
