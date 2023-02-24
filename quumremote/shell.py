@@ -14,6 +14,9 @@ class ShittyShell:
 
     async def run(self, command: str):
         await self._terminal.send_line(command)
+        # Get the return code
+        await self._terminal.send_line("echo $?")
+        return int(self._terminal.latest_line())
 
     async def run_detached(self, command: str):
         await self._terminal.send_line(command + "&")

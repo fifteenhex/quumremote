@@ -45,3 +45,6 @@ class ShittyTerminal:
 
     async def hit_enter(self):
         await self.send_line("")
+
+    def latest_line(self):
+        return self.scrollback[-1]
